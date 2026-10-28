@@ -60,6 +60,17 @@ export class BridgeClient {
           console.error("[BridgeServer Error]", err);
         }
       });
+
+      const cleanup = () => {
+        try {
+          this.activeSocket?.close();
+          this.wss?.close();
+        } catch { }
+      };
+
+      process.on("exit", cleanup);
+      process.on("SIGINT", () => { cleanup(); process.exit(0); });
+      process.on("SIGTERM", () => { cleanup(); process.exit(0); });
     } catch (e) {
       console.error("[BridgeServer Failed to start]", e);
     }
