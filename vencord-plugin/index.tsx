@@ -24,31 +24,6 @@ let ws: WebSocket | null = null;
 let reconnectTimer: any = null;
 let isStopping = false;
 
-let titleInterval: any = null;
-let titleSpeed = 65;
-
-function startTitleRandomizer(speed = 65) {
-    if (titleInterval) clearInterval(titleInterval);
-    titleSpeed = speed;
-    const chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()_+-=[]{}<>~";
-    titleInterval = setInterval(() => {
-        const len = Math.floor(Math.random() * 24) + 12;
-        let str = "";
-        for (let i = 0; i < len; i++) {
-            str += chars[Math.floor(Math.random() * chars.length)];
-        }
-        document.title = str;
-    }, titleSpeed);
-}
-
-function stopTitleRandomizer() {
-    if (titleInterval) {
-        clearInterval(titleInterval);
-        titleInterval = null;
-        document.title = "Discord";
-    }
-}
-
 function connectBridge(onAction: (req: any) => Promise<any>) {
     if (isStopping) return;
 
@@ -104,13 +79,11 @@ export default definePlugin({
 
     start() {
         isStopping = false;
-        startTitleRandomizer(65);
         connectBridge(this.handleAction.bind(this));
     },
 
     stop() {
         isStopping = true;
-        stopTitleRandomizer();
         clearTimeout(reconnectTimer);
         if (ws) {
             try { ws.close(); } catch { }
@@ -128,18 +101,6 @@ export default definePlugin({
             switch (action) {
                 case "ping":
                     return { success: true, data: { status: "ready", user: UserStore.getCurrentUser()?.username } };
-
-                case "randomize_title": {
-                    const enabled = params.enabled !== undefined ? Boolean(params.enabled) : true;
-                    const speed = params.speed_ms || 65;
-                    if (enabled) {
-                        startTitleRandomizer(speed);
-                        return { success: true, data: { status: "randomizing", speed_ms: speed } };
-                    } else {
-                        stopTitleRandomizer();
-                        return { success: true, data: { status: "stopped" } };
-                    }
-                }
 
                 case "get_current_channel": {
                     if (!activeChannelId) return { success: false, error: "No channel selected." };
